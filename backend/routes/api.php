@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TopicController;
+use App\Http\Controllers\SpeakingMaterialController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -42,3 +43,22 @@ Route::patch('/topics/{id}', [TopicController::class, 'update']);
 
 // Hapus topik
 Route::delete('/topics/{id}', [TopicController::class, 'destroy']);
+
+// ===== SPEAKING MATERIAL ROUTES =====
+// Lihat semua materi
+Route::get('/speaking-materials', [SpeakingMaterialController::class, 'index']);
+
+// Lihat detail materi
+Route::get('/speaking-materials/{id}', [SpeakingMaterialController::class, 'show']);
+
+// Tambah materi
+Route::post('/speaking-materials', [SpeakingMaterialController::class, 'store']);
+
+// Update materi
+Route::post('/speaking-materials/{id}', [SpeakingMaterialController::class, 'update']);
+
+// Hapus materi
+Route::delete('/speaking-materials/{id}', [SpeakingMaterialController::class, 'destroy']);
+
+// Save progress
+Route::post('/speaking-materials/progress', [SpeakingMaterialController::class, 'saveProgress']);
