@@ -406,6 +406,110 @@ http://localhost:8000/api
 
 ---
 
+## LEARNING MATERIAL ENDPOINTS
+
+### 1. Get All Learning Materials
+
+- **Method:** `GET`
+- **URL:** `/learning-materials`
+- **Response:**
+
+```json
+[
+    {
+        "id": 1,
+        "title": "Flutter Basics",
+        "description": "Learn Flutter fundamentals",
+        "kategori": "Mobile Development",
+        "video": "videos/flutter-intro.mp4",
+        "pdf": "pdfs/flutter-guide.pdf",
+        "video_url": "http://192.168.100.7:8080/storage/videos/flutter-intro.mp4",
+        "pdf_url": "http://192.168.100.7:8080/storage/pdfs/flutter-guide.pdf",
+        "created_at": "2026-06-02T10:00:00.000000Z",
+        "updated_at": "2026-06-02T10:00:00.000000Z"
+    }
+]
+```
+
+### 2. Get Learning Materials by Category
+
+- **Method:** `GET`
+- **URL:** `/learning-materials/category/{kategori}`
+- **Example:** `/learning-materials/category/Mobile Development`
+- **Response:**
+
+```json
+[
+    {
+        "id": 1,
+        "title": "Flutter Basics",
+        "description": "Learn Flutter fundamentals",
+        "kategori": "Mobile Development",
+        "video": "videos/flutter-intro.mp4",
+        "pdf": "pdfs/flutter-guide.pdf",
+        "video_url": "http://192.168.100.7:8080/storage/videos/flutter-intro.mp4",
+        "pdf_url": "http://192.168.100.7:8080/storage/pdfs/flutter-guide.pdf",
+        "created_at": "2026-06-02T10:00:00.000000Z",
+        "updated_at": "2026-06-02T10:00:00.000000Z"
+    }
+]
+```
+
+### 3. Upload Learning Material (API)
+
+- **Method:** `POST`
+- **URL:** `/learning-materials`
+- **Headers:** `Content-Type: multipart/form-data`
+- **Request Body (Form Data):**
+    - `title` (required) - string
+    - `description` (optional) - string
+    - `kategori` (required) - string
+    - `video` (required) - file (mp4, mov, avi)
+    - `pdf` (optional) - file (pdf)
+
+- **Response (201):**
+
+```json
+{
+    "message": "Materi berhasil upload",
+    "data": {
+        "id": 1,
+        "title": "Flutter Basics",
+        "description": "Learn Flutter fundamentals",
+        "kategori": "Mobile Development",
+        "video": "videos/flutter-intro.mp4",
+        "pdf": "pdfs/flutter-guide.pdf",
+        "created_at": "2026-06-02T10:00:00.000000Z",
+        "updated_at": "2026-06-02T10:00:00.000000Z"
+    }
+}
+```
+
+### 4. Save Progress
+
+- **Method:** `POST`
+- **URL:** `/learning-materials/progress`
+- **Headers:** `Content-Type: application/json`
+- **Request Body:**
+
+```json
+{
+    "material_id": 1,
+    "progress": 75,
+    "user_id": 1
+}
+```
+
+- **Response:**
+
+```json
+{
+    "message": "Progress berhasil disimpan"
+}
+```
+
+---
+
 ## Error Responses
 
 ### 404 Not Found
@@ -470,5 +574,13 @@ http://localhost:8000/api
 
 - `title` - Required, string, max 255 characters
 - `description` - Optional, string
+- `video` - Required (create), file, mimes: mp4, mov, avi
+- `pdf` - Optional, file, mimes: pdf
+
+### Learning Material Create/Update
+
+- `title` - Required, string, max 255 characters
+- `description` - Optional, string
+- `kategori` - Required, string, max 255 characters
 - `video` - Required (create), file, mimes: mp4, mov, avi
 - `pdf` - Optional, file, mimes: pdf

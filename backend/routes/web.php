@@ -2,13 +2,22 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Admin\AdminWebPackageController;
+use App\Http\Controllers\Admin\AuthController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('admin.login');
 });
 
-// Admin Routes
+// Admin Auth Routes (guest)
 Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+});
+
+// Admin Routes (protected)
+Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     // Dashboard
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
 
@@ -35,4 +44,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/materials/{id}/edit', [AdminController::class, 'editMaterial'])->name('materials.edit');
     Route::post('/materials/{id}', [AdminController::class, 'updateMaterial'])->name('materials.update');
     Route::delete('/materials/{id}', [AdminController::class, 'deleteMaterial'])->name('materials.delete');
+
+    // Packages
+    Route::get('/packages', [AdminWebPackageController::class, 'index'])->name('packages.index');
+    Route::get('/packages/create', [AdminWebPackageController::class, 'create'])->name('packages.create');
+    Route::post('/packages', [AdminWebPackageController::class, 'store'])->name('packages.store');
+    Route::get('/packages/{id}/edit', [AdminWebPackageController::class, 'edit'])->name('packages.edit');
+    Route::put('/packages/{id}', [AdminWebPackageController::class, 'update'])->name('packages.update');
+    Route::delete('/packages/{id}', [AdminWebPackageController::class, 'destroy'])->name('packages.destroy');
 });

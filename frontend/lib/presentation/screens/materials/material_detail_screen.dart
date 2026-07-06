@@ -1,245 +1,206 @@
-import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../data/models/speaking_material_model.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
 
-class MaterialDetailScreen extends StatelessWidget {
-  final SpeakingMaterialModel material;
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/error_view.dart';
+import '../../../data/models/learning_material_model.dart';
+import '../../../presentation/providers/learning_material_provider.dart';
+import 'in_app_video_player.dart';
+import 'pdf_viewer_screen.dart';
 
-  const MaterialDetailScreen({super.key, required this.material});
+class MaterialDetailScreen extends StatefulWidget {
+  final int materialId;
 
-  Future<void> _openUrl(BuildContext context, String? url) async {
-    if (url == null || url.isEmpty) return;
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tidak bisa membuka file')),
-        );
+  const MaterialDetailScreen({
+    super.key,
+    required this.materialId,
+  });
+
+  @override
+  State<MaterialDetailScreen> createState() => _MaterialDetailScreenState();
+}
+
+class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
+  final Dio _dio = Dio();
+  LearningMaterial? _material;
+  bool _loading = true;
+  bool _pdfReading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMaterial();
+  }
+
+  Future<void> _loadMaterial() async {
+    try {
+      final provider = context.read<LearningMaterialProvider>();
+      final material = provider.materials.firstWhere(
+        (m) => m.id == widget.materialId,
+      );
+
+      if (mounted) {
+        setState(() {
+          _material = material;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loading = false);
       }
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      body: CustomScrollView(
-        slivers: [
-          // Hero header
-          SliverAppBar(
-            expandedHeight: 220,
-            pinned: true,
-            backgroundColor: const Color(0xFF10B981),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF10B981), Color(0xFF059669)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: const Center(
-                  child: Icon(Icons.play_circle_fill,
-                      size: 80, color: Colors.white70),
-                ),
-              ),
-            ),
-            leading: IconButton(
-              icon: const CircleAvatar(
-                backgroundColor: Colors.black26,
-                child: Icon(Icons.arrow_back, color: Colors.white, size: 20),
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
+  Future<void> _readPdf() async {
+    final material = _material;
+    if (material == null) return;
 
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  Text(material.title,
-                      style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.textPrimary)),
-                  const SizedBox(height: 8),
+    final pdfUrl = material.pdfUrl?.isNotEmpty == true 
+        ? material.pdfUrl 
+        : material.pdf;
 
-                  // Description
-                  if (material.description != null &&
-                      material.description!.isNotEmpty) ...[
-                    Text(material.description!,
-                        style: const TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 14,
-                            height: 1.6)),
-                    const SizedBox(height: 20),
-                  ],
+    if (pdfUrl == null || pdfUrl.isEmpty) return;
 
-                  const Divider(color: AppTheme.border),
-                  const SizedBox(height: 20),
+    setState(() => _pdfReading = true);
 
-                  // Files section
-                  const Text('File Materi',
-                      style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textPrimary)),
-                  const SizedBox(height: 14),
-
-                  // Video button
-                  _FileButton(
-                    icon: Icons.play_circle_fill,
-                    label: 'Tonton Video',
-                    subtitle: 'Buka video di browser/player',
-                    color: const Color(0xFF10B981),
-                    onTap: () => _openUrl(context, material.videoUrl),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // PDF button
-                  if (material.pdf != null)
-                    _FileButton(
-                      icon: Icons.picture_as_pdf,
-                      label: 'Buka PDF',
-                      subtitle: 'Buka dokumen PDF',
-                      color: const Color(0xFFEF4444),
-                      onTap: () => _openUrl(context, material.pdfUrl),
-                    ),
-
-                  const SizedBox(height: 24),
-                  const Divider(color: AppTheme.border),
-                  const SizedBox(height: 16),
-
-                  // Meta info
-                  _MetaRow(
-                      icon: Icons.calendar_today,
-                      label: 'Ditambahkan',
-                      value: _formatDate(material.createdAt)),
-                  const SizedBox(height: 8),
-                  _MetaRow(
-                      icon: Icons.videocam,
-                      label: 'Video',
-                      value: material.video.split('/').last),
-                  if (material.pdf != null) ...[
-                    const SizedBox(height: 8),
-                    _MetaRow(
-                        icon: Icons.picture_as_pdf,
-                        label: 'PDF',
-                        value: material.pdf!.split('/').last),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatDate(String? dateStr) {
-    if (dateStr == null) return '-';
     try {
-      final dt = DateTime.parse(dateStr);
-      return '${dt.day}/${dt.month}/${dt.year}';
-    } catch (_) {
-      return dateStr;
+      String pdfPath = pdfUrl;
+      
+      if (pdfUrl.startsWith('http')) {
+        final tempDir = await getTemporaryDirectory();
+        final fileName = 'pdf_${ material.id}.pdf';
+        pdfPath = '${tempDir.path}/$fileName';
+        await _dio.download(pdfUrl, pdfPath);
+      }
+
+      if (!mounted) return;
+      
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => PdfViewerScreen(
+            filePath: pdfPath,
+            title: material.title,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal buka PDF: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _pdfReading = false);
     }
   }
-}
-
-class _FileButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _FileButton({
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.color,
-    required this.onTap,
-  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.2)),
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_material == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Material')),
+        body: const ErrorView(
+          message: 'Material tidak ditemukan',
         ),
-        child: Row(
+      );
+    }
+
+    final material = _material!;
+    final videoUrl = material.videoUrl.isNotEmpty 
+        ? material.videoUrl 
+        : material.video;
+    final hasPdf = material.pdf != null && material.pdf!.isNotEmpty || 
+                   material.pdfUrl != null && material.pdfUrl!.isNotEmpty;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(material.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12),
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: InAppVideoPlayer(
+                key: ValueKey(videoUrl),
+                filePath: videoUrl,
               ),
-              child: Icon(icon, color: color, size: 26),
             ),
-            const SizedBox(width: 14),
-            Expanded(
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label,
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                          color: color)),
-                  Text(subtitle,
+                  Text(
+                    material.title,
+                    style: AppTextStyles.headlineMedium(context),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      material.kategori,
                       style: const TextStyle(
-                          color: AppTheme.textSecondary, fontSize: 12)),
+                        fontSize: 12,
+                        color: AppColors.primaryBlue,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (material.description != null && material.description!.isNotEmpty) ...[
+                    Text('Deskripsi', style: AppTextStyles.titleLarge(context)),
+                    const SizedBox(height: 8),
+                    Text(material.description!, style: AppTextStyles.bodyMedium(context)),
+                    const SizedBox(height: 16),
+                  ],
+                  if (hasPdf)
+                    FilledButton.icon(
+                      onPressed: _pdfReading ? null : _readPdf,
+                      icon: _pdfReading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.picture_as_pdf),
+                      label: Text(_pdfReading ? 'Loading...' : 'Lihat PDF'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primaryPurple,
+                        minimumSize: const Size(double.infinity, 48),
+                      ),
+                    )
+                  else
+                    Text(
+                      'Tidak ada PDF',
+                      style: AppTextStyles.bodySmall(context).copyWith(
+                        color: AppColors.lightTextSecondary,
+                      ),
+                    ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: color),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _MetaRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _MetaRow(
-      {required this.icon, required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: AppTheme.textSecondary),
-        const SizedBox(width: 8),
-        Text('$label: ',
-            style: const TextStyle(
-                color: AppTheme.textSecondary, fontSize: 13)),
-        Expanded(
-          child: Text(value,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600)),
-        ),
-      ],
     );
   }
 }

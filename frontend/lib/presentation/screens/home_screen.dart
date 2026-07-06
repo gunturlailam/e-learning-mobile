@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
+import 'package:provider/provider.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/providers/theme_provider.dart';
+import '../../presentation/providers/package_provider.dart';
+import '../../presentation/providers/learning_material_provider.dart';
+import '../widgets/menu_grid.dart';
 import 'topics/topics_screen.dart';
 import 'materials/materials_screen.dart';
-import 'users/users_screen.dart';
+import 'profile/profile_screen.dart';
 
+/// Home Screen - Main navigation with bottom nav bar
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -15,42 +21,44 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = const [
-    _DashboardTab(),
+    DashboardTab(),
     TopicsScreen(),
     MaterialsScreen(),
-    UsersScreen(),
+    ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
-        onDestinationSelected: (i) => setState(() => _currentIndex = i),
-        backgroundColor: AppTheme.surface,
-        indicatorColor: AppTheme.primary.withOpacity(0.12),
+        onDestinationSelected: (index) {
+          setState(() => _currentIndex = index);
+        },
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home, color: AppTheme.primary),
+            selectedIcon: Icon(Icons.home),
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.book_outlined),
-            selectedIcon: Icon(Icons.book, color: AppTheme.primary),
+            icon: Icon(Icons.topic_outlined),
+            selectedIcon: Icon(Icons.topic),
             label: 'Topics',
           ),
           NavigationDestination(
-            icon: Icon(Icons.play_circle_outline),
-            selectedIcon:
-                Icon(Icons.play_circle, color: AppTheme.primary),
+            icon: Icon(Icons.video_library_outlined),
+            selectedIcon: Icon(Icons.video_library),
             label: 'Materials',
           ),
           NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people, color: AppTheme.primary),
-            label: 'Users',
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profile',
           ),
         ],
       ),
@@ -58,259 +66,356 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _DashboardTab extends StatelessWidget {
-  const _DashboardTab();
+/// Dashboard Tab - Home screen content (Pilih Kursus)
+class DashboardTab extends StatefulWidget {
+  const DashboardTab({Key? key}) : super(key: key);
+
+  @override
+  State<DashboardTab> createState() => _DashboardTabState();
+}
+
+class _DashboardTabState extends State<DashboardTab> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<PackageProvider>().loadPackages();
+      context.read<LearningMaterialProvider>().loadMaterials();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+    final secondaryText =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+
     return Scaffold(
-      backgroundColor: AppTheme.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await context.read<PackageProvider>().loadPackages();
+          await context.read<LearningMaterialProvider>().loadMaterials();
+        },
+        child: CustomScrollView(
+          slivers: [
+            // App Bar
+            SliverAppBar(
+              floating: true,
+              title: Row(
                 children: [
                   Container(
-                    width: 48,
-                    height: 48,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppTheme.primary, AppTheme.primaryLight],
-                      ),
-                      borderRadius: BorderRadius.circular(14),
+                      color: AppColors.primaryBlue.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.school,
-                        color: Colors.white, size: 26),
+                    padding: const EdgeInsets.all(4),
+                    child: Image.asset(
+                      'assets/images/g-learn.png',
+                      fit: BoxFit.contain,
+                    ),
                   ),
-                  const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('E-Learning App',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: AppTheme.textPrimary,
-                              )),
-                      const Text('Selamat datang! 👋',
-                          style: TextStyle(
-                              color: AppTheme.textSecondary, fontSize: 13)),
-                    ],
-                  ),
+                  const SizedBox(width: 10),
+                  const Text('E-Learning'),
                 ],
               ),
-              const SizedBox(height: 28),
-
-              // Banner
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    isDark ? Icons.light_mode : Icons.dark_mode,
                   ),
-                  borderRadius: BorderRadius.circular(20),
+                  onPressed: () => themeProvider.toggleTheme(),
                 ),
+              ],
+            ),
+
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Mulai Belajar Hari Ini',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 8),
-                    const Text(
-                        'Tingkatkan kemampuan public speaking Anda\nbersama materi terbaik kami.',
-                        style: TextStyle(
-                            color: Colors.white70, fontSize: 13, height: 1.5)),
-                    const SizedBox(height: 18),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppTheme.primary,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: const Text('Jelajahi Materi',
-                          style: TextStyle(fontWeight: FontWeight.w700)),
+                    _buildHeroBanner(),
+                    const SizedBox(height: 24),
+                    _buildStatsRow(secondaryText),
+                    const SizedBox(height: 28),
+                    // Header Pilih Kursus + tombol Lihat Lainnya
+                    Consumer<PackageProvider>(
+                      builder: (context, provider, _) {
+                        final hasMore = provider.packages.length > 4;
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Pilih Kursus',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    color: isDark
+                                        ? AppColors.darkTextPrimary
+                                        : AppColors.lightTextPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Mulai perjalanan belajarmu hari ini',
+                                  style: TextStyle(
+                                      fontSize: 13, color: secondaryText),
+                                ),
+                              ],
+                            ),
+                            if (hasMore)
+                              GestureDetector(
+                                onTap: () => _showAllPackages(context, provider),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryBlue
+                                        .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: AppColors.primaryBlue
+                                          .withOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        'Lihat Lainnya',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.primaryBlue,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 14,
+                                        color: AppColors.primaryBlue,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
                     ),
+                    const SizedBox(height: 16),
+                    // MenuGrid: tampil max 4, sisanya di halaman "Lihat Lainnya"
+                    const MenuGrid(maxItems: 4),
                   ],
                 ),
               ),
-              const SizedBox(height: 28),
-
-              // Menu Grid
-              Text('Menu Utama',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary)),
-              const SizedBox(height: 14),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 14,
-                mainAxisSpacing: 14,
-                childAspectRatio: 1.2,
-                children: [
-                  _MenuCard(
-                    icon: Icons.book,
-                    label: 'Topics',
-                    subtitle: 'Materi pembelajaran',
-                    color: const Color(0xFF4F46E5),
-                    onTap: () {},
-                  ),
-                  _MenuCard(
-                    icon: Icons.play_circle_fill,
-                    label: 'Speaking',
-                    subtitle: 'Video & PDF materi',
-                    color: const Color(0xFF10B981),
-                    onTap: () {},
-                  ),
-                  _MenuCard(
-                    icon: Icons.people,
-                    label: 'Users',
-                    subtitle: 'Kelola pengguna',
-                    color: const Color(0xFFF59E0B),
-                    onTap: () {},
-                  ),
-                  _MenuCard(
-                    icon: Icons.bar_chart,
-                    label: 'Progress',
-                    subtitle: 'Pantau kemajuan',
-                    color: const Color(0xFFEF4444),
-                    onTap: () {},
-                  ),
-                ],
-              ),
-              const SizedBox(height: 28),
-
-              // Info
-              Text('Tentang Aplikasi',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary)),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: AppTheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.border),
-                ),
-                child: const Column(
-                  children: [
-                    _InfoRow(
-                        icon: Icons.check_circle,
-                        color: AppTheme.secondary,
-                        text: 'Akses materi speaking kapan saja'),
-                    SizedBox(height: 10),
-                    _InfoRow(
-                        icon: Icons.check_circle,
-                        color: AppTheme.secondary,
-                        text: 'Video & PDF tersedia offline'),
-                    SizedBox(height: 10),
-                    _InfoRow(
-                        icon: Icons.check_circle,
-                        color: AppTheme.secondary,
-                        text: 'Pantau progress belajar Anda'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MenuCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _MenuCard({
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.2)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 24),
             ),
-            const SizedBox(height: 12),
-            Text(label,
-                style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: AppTheme.textPrimary)),
-            const SizedBox(height: 2),
-            Text(subtitle,
-                style: const TextStyle(
-                    fontSize: 11, color: AppTheme.textSecondary)),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildHeroBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2563EB).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Pasti Jago Bahasa Inggris\nDengan Biaya Murah!',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Coba gratis sekarang!',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              // Scroll otomatis sudah terlihat; cukup muat ulang paket.
+              context.read<PackageProvider>().loadPackages();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF2563EB),
+              elevation: 0,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Mulai Belajar',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
+                SizedBox(width: 6),
+                Icon(Icons.arrow_forward_rounded, size: 18),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsRow(Color secondaryText) {
+    return Consumer2<PackageProvider, LearningMaterialProvider>(
+      builder: (context, pkg, mat, _) {
+        return Row(
+          children: [
+            Expanded(
+              child: _statCard(
+                Icons.workspace_premium_rounded,
+                '${pkg.packages.length}',
+                'Paket Kursus',
+                AppColors.primaryBlue,
+                secondaryText,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: _statCard(
+                Icons.video_library_rounded,
+                '${mat.materials.length}',
+                'Total Materi',
+                AppColors.primaryPurple,
+                secondaryText,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _statCard(
+    IconData icon,
+    String value,
+    String label,
+    Color color,
+    Color secondaryText,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 28),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(label, style: TextStyle(fontSize: 13, color: secondaryText)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPackageGrid(Color secondaryText) {
+    // Diganti dengan MenuGrid sesuai modul Pertemuan 15
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildLoadingGrid() {
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildMessage({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color secondaryText,
+  }) {
+    return const SizedBox.shrink();
+  }
+
+  void _showAllPackages(BuildContext context, PackageProvider provider) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider.value(
+          value: provider,
+          child: const AllPackagesPage(),
+        ),
+      ),
+    );
+  }
+
+  void _showPackageDetail(BuildContext context, dynamic package) {}
+
+  Widget _chip(String text, Color color) => const SizedBox.shrink();
 }
 
-class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String text;
+// ─── Halaman semua paket ─────────────────────────────────────────────────────
 
-  const _InfoRow(
-      {required this.icon, required this.color, required this.text});
+class AllPackagesPage extends StatelessWidget {
+  const AllPackagesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(width: 10),
-        Expanded(
-            child: Text(text,
-                style: const TextStyle(
-                    color: AppTheme.textSecondary, fontSize: 13))),
-      ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Semua Paket Kursus'),
+      ),
+      body: Consumer<PackageProvider>(
+        builder: (context, provider, _) {
+          if (provider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return RefreshIndicator(
+            onRefresh: provider.loadPackages,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: MenuGrid(maxItems: provider.packages.length),
+            ),
+          );
+        },
+      ),
     );
   }
 }

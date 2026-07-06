@@ -1,13 +1,13 @@
 @extends('admin.layout')
 
-@section('title', 'Speaking Materials Management')
-@section('page-title', 'Speaking Materials Management')
+@section('title', 'Learning Materials Management')
+@section('page-title', 'Learning Materials Management')
 
 @section('content')
 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
     <div class="p-6 border-b border-gray-200 flex justify-between items-center">
         <h3 class="text-xl font-semibold text-gray-800">
-            <i class="fas fa-video text-green-600"></i> All Speaking Materials
+            <i class="fas fa-video text-green-600"></i> All Learning Materials
         </h3>
         <a href="{{ route('admin.materials.create') }}" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors duration-200 shadow-md">
             <i class="fas fa-plus mr-2"></i> Add New Material
@@ -20,6 +20,7 @@
                 <tr>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Title</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Description</th>
                     <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Files</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Created At</th>
@@ -39,6 +40,11 @@
                                 <div class="text-sm font-medium text-gray-900">{{ $material->title }}</div>
                             </div>
                         </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                            {{ $material->kategori }}
+                        </span>
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-600">
                         {{ Str::limit($material->description, 50) }}

@@ -1,7 +1,7 @@
 @extends('admin.layout')
 
-@section('title', 'Edit Speaking Material')
-@section('page-title', 'Edit Speaking Material')
+@section('title', 'Edit Learning Material')
+@section('page-title', 'Edit Learning Material')
 
 @section('content')
 <div class="max-w-2xl">
@@ -22,6 +22,27 @@
                 <input type="text" name="title" id="title" value="{{ old('title', $material->title) }}" required
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent @error('title') border-red-500 @enderror">
                 @error('title')
+                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="mb-6">
+                <label for="kategori" class="block text-sm font-medium text-gray-700 mb-2">
+                    Category <span class="text-red-500">*</span>
+                </label>
+                <select name="kategori" id="kategori" required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent @error('kategori') border-red-500 @enderror">
+                    <option value="">-- Select Category --</option>
+                    <option value="Flutter" {{ old('kategori', $material->kategori) == 'Flutter' ? 'selected' : '' }}>Flutter</option>
+                    <option value="Laravel" {{ old('kategori', $material->kategori) == 'Laravel' ? 'selected' : '' }}>Laravel</option>
+                    <option value="JavaScript" {{ old('kategori', $material->kategori) == 'JavaScript' ? 'selected' : '' }}>JavaScript</option>
+                    <option value="Python" {{ old('kategori', $material->kategori) == 'Python' ? 'selected' : '' }}>Python</option>
+                    <option value="React" {{ old('kategori', $material->kategori) == 'React' ? 'selected' : '' }}>React</option>
+                    <option value="Vue.js" {{ old('kategori', $material->kategori) == 'Vue.js' ? 'selected' : '' }}>Vue.js</option>
+                    <option value="Database" {{ old('kategori', $material->kategori) == 'Database' ? 'selected' : '' }}>Database</option>
+                    <option value="Other" {{ old('kategori', $material->kategori) == 'Other' ? 'selected' : '' }}>Other</option>
+                </select>
+                @error('kategori')
                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>

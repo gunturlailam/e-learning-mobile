@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+/* ===========================
+   Admin Panel - Custom Styles
+   =========================== */
+
+/* Sidebar active & hover links */
+.sidebar-link:hover {
+    background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.sidebar-link.active {
+    background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+}
+
+/* Smooth transitions for sidebar */
+.sidebar-link {
+    transition: all 0.2s ease;
+}
+
+/* Table row hover */
+tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Alert animation */
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+.alert-auto-hide {
+    animation: fadeOut 0.5s ease forwards;
+    animation-delay: 5s;
+}
+
+/* Gradient text utility */
+.gradient-text {
+    background: linear-gradient(90deg, #3b82f6, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Card shadow hover */
+.card-hover {
+    transition:
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+.card-hover:hover {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+/* File input styling */
+input[type="file"] {
+    cursor: pointer;
+}
+
+/* Scrollbar styling for sidebar */
+::-webkit-scrollbar {
+    width: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #3b82f6;
+    border-radius: 2px;
+}

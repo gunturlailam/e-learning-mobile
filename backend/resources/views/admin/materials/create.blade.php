@@ -1,14 +1,14 @@
 @extends('admin.layout')
 
-@section('title', 'Add New Speaking Material')
-@section('page-title', 'Add New Speaking Material')
+@section('title', 'Add New Learning Material')
+@section('page-title', 'Add New Learning Material')
 
 @section('content')
 <div class="max-w-2xl">
     <div class="bg-white rounded-xl shadow-lg overflow-hidden">
         <div class="p-6 border-b border-gray-200">
             <h3 class="text-xl font-semibold text-gray-800">
-                <i class="fas fa-video text-green-600"></i> Upload New Speaking Material
+                <i class="fas fa-video text-green-600"></i> Upload New Learning Material
             </h3>
         </div>
 
@@ -22,6 +22,27 @@
                 <input type="text" name="title" id="title" value="{{ old('title') }}" required
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent @error('title') border-red-500 @enderror">
                 @error('title')
+                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="mb-6">
+                <label for="kategori" class="block text-sm font-medium text-gray-700 mb-2">
+                    Category <span class="text-red-500">*</span>
+                </label>
+                <select name="kategori" id="kategori" required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent @error('kategori') border-red-500 @enderror">
+                    <option value="">-- Select Category --</option>
+                    <option value="Flutter" {{ old('kategori') == 'Flutter' ? 'selected' : '' }}>Flutter</option>
+                    <option value="Laravel" {{ old('kategori') == 'Laravel' ? 'selected' : '' }}>Laravel</option>
+                    <option value="JavaScript" {{ old('kategori') == 'JavaScript' ? 'selected' : '' }}>JavaScript</option>
+                    <option value="Python" {{ old('kategori') == 'Python' ? 'selected' : '' }}>Python</option>
+                    <option value="React" {{ old('kategori') == 'React' ? 'selected' : '' }}>React</option>
+                    <option value="Vue.js" {{ old('kategori') == 'Vue.js' ? 'selected' : '' }}>Vue.js</option>
+                    <option value="Database" {{ old('kategori') == 'Database' ? 'selected' : '' }}>Database</option>
+                    <option value="Other" {{ old('kategori') == 'Other' ? 'selected' : '' }}>Other</option>
+                </select>
+                @error('kategori')
                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>

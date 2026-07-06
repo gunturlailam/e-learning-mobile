@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Topic;
-use App\Models\SpeakingMaterial;
+use App\Models\LearningMaterial;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
 
@@ -16,7 +16,7 @@ class AdminController extends Controller
     {
         $userCount = User::count();
         $topicCount = Topic::count();
-        $materialCount = SpeakingMaterial::count();
+        $materialCount = LearningMaterial::count();
 
         return view('admin.dashboard', compact('userCount', 'topicCount', 'materialCount'));
     }
@@ -50,13 +50,13 @@ class AdminController extends Controller
         return redirect()->route('admin.users')->with('success', 'User berhasil ditambahkan!');
     }
 
-    public function editUser($id)
+    public function editUser(int $id)
     {
         $user = User::findOrFail($id);
         return view('admin.users.edit', compact('user'));
     }
 
-    public function updateUser(Request $request, $id)
+    public function updateUser(Request $request, int $id)
     {
         $user = User::findOrFail($id);
 
@@ -78,7 +78,7 @@ class AdminController extends Controller
         return redirect()->route('admin.users')->with('success', 'User berhasil diperbarui!');
     }
 
-    public function deleteUser($id)
+    public function deleteUser(int $id)
     {
         $user = User::findOrFail($id);
         $user->delete();
@@ -117,13 +117,13 @@ class AdminController extends Controller
         return redirect()->route('admin.topics')->with('success', 'Topik berhasil ditambahkan!');
     }
 
-    public function editTopic($id)
+    public function editTopic(int $id)
     {
         $topic = Topic::findOrFail($id);
         return view('admin.topics.edit', compact('topic'));
     }
 
-    public function updateTopic(Request $request, $id)
+    public function updateTopic(Request $request, int $id)
     {
         $topic = Topic::findOrFail($id);
 
@@ -144,7 +144,7 @@ class AdminController extends Controller
         return redirect()->route('admin.topics')->with('success', 'Topik berhasil diperbarui!');
     }
 
-    public function deleteTopic($id)
+    public function deleteTopic(int $id)
     {
         $topic = Topic::findOrFail($id);
         $topic->delete();
@@ -152,10 +152,10 @@ class AdminController extends Controller
         return redirect()->route('admin.topics')->with('success', 'Topik berhasil dihapus!');
     }
 
-    // ===== SPEAKING MATERIAL MANAGEMENT =====
+    // ===== LEARNING MATERIAL MANAGEMENT =====
     public function materials()
     {
-        $materials = SpeakingMaterial::latest()->paginate(10);
+        $materials = LearningMaterial::latest()->paginate(10);
         return view('admin.materials.index', compact('materials'));
     }
 
@@ -169,36 +169,43 @@ class AdminController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'video' => 'required|mimes:mp4,mov,avi|max:102400',
-            'pdf' => 'nullable|mimes:pdf|max:10240'
+            'kategori' => 'required|string|max:100',
+            'video' => 'required|file|mimes:mp4,mov,avi,mkv|max:512000',
+            'pdf' => 'nullable|file|mimes:pdf|max:51200'
         ]);
 
-        $video = $request->file('video')->store('videos', 'public');
-        $pdf = $request->hasFile('pdf') ? $request->file('pdf')->store('pdfs', 'public') : null;
+        try {
+            $video = $request->file('video')->store('videos', 'public');
+            $pdf = $request->hasFile('pdf') ? $request->file('pdf')->store('pdfs', 'public') : null;
 
-        SpeakingMaterial::create([
-            'title' => $request->title,
-            'description' => $request->description,
-            'video' => $video,
-            'pdf' => $pdf
-        ]);
+            LearningMaterial::create([
+                'title' => $request->title,
+                'description' => $request->description,
+                'kategori' => $request->kategori,
+                'video' => $video,
+                'pdf' => $pdf,
+            ]);
 
-        return redirect()->route('admin.materials')->with('success', 'Materi berhasil ditambahkan!');
+            return redirect()->route('admin.materials')->with('success', 'Materi berhasil ditambahkan!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error: ' . $e->getMessage());
+        }
     }
 
-    public function editMaterial($id)
+    public function editMaterial(int $id)
     {
-        $material = SpeakingMaterial::findOrFail($id);
+        $material = LearningMaterial::findOrFail($id);
         return view('admin.materials.edit', compact('material'));
     }
 
-    public function updateMaterial(Request $request, $id)
+    public function updateMaterial(Request $request, int $id)
     {
-        $material = SpeakingMaterial::findOrFail($id);
+        $material = LearningMaterial::findOrFail($id);
 
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'kategori' => 'required|string|max:100',
             'video' => 'nullable|mimes:mp4,mov,avi|max:102400',
             'pdf' => 'nullable|mimes:pdf|max:10240'
         ]);
@@ -219,14 +226,15 @@ class AdminController extends Controller
 
         $material->title = $request->title;
         $material->description = $request->description;
+        $material->kategori = $request->kategori;
         $material->save();
 
         return redirect()->route('admin.materials')->with('success', 'Materi berhasil diperbarui!');
     }
 
-    public function deleteMaterial($id)
+    public function deleteMaterial(int $id)
     {
-        $material = SpeakingMaterial::findOrFail($id);
+        $material = LearningMaterial::findOrFail($id);
 
         if ($material->video && Storage::disk('public')->exists($material->video)) {
             Storage::disk('public')->delete($material->video);

@@ -1,233 +1,414 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../data/models/speaking_material_model.dart';
-import '../../../data/services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../providers/learning_material_provider.dart';
+import '../../../data/models/learning_material_model.dart';
 import 'material_detail_screen.dart';
-import 'material_upload_screen.dart';
 
+/// Materials Screen - List of learning materials (modern UI)
 class MaterialsScreen extends StatefulWidget {
-  const MaterialsScreen({super.key});
+  const MaterialsScreen({Key? key}) : super(key: key);
 
   @override
   State<MaterialsScreen> createState() => _MaterialsScreenState();
 }
 
 class _MaterialsScreenState extends State<MaterialsScreen> {
-  final _api = ApiService();
-  List<SpeakingMaterialModel> _materials = [];
-  bool _loading = true;
-  String? _error;
+  final TextEditingController _searchController = TextEditingController();
+
+  static const List<List<Color>> _gradients = [
+    [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+    [Color(0xFF0D9488), Color(0xFF0EA5E9)],
+    [Color(0xFFF59E0B), Color(0xFFEF4444)],
+    [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+    [Color(0xFF10B981), Color(0xFF059669)],
+  ];
 
   @override
   void initState() {
     super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<LearningMaterialProvider>().loadMaterials();
     });
-    try {
-      final data = await _api.getMaterials();
-      setState(() => _materials = data);
-    } catch (e) {
-      setState(() => _error = e.toString());
-    } finally {
-      setState(() => _loading = false);
-    }
   }
 
-  Future<void> _delete(SpeakingMaterialModel m) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Hapus Materi'),
-        content: Text('Hapus "${m.title}"?\nFile video dan PDF akan ikut terhapus.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Batal')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-    try {
-      await _api.deleteMaterial(m.id);
-      _load();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Materi berhasil dihapus'),
-              backgroundColor: AppTheme.secondary),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(e.toString()),
-              backgroundColor: AppTheme.danger),
-        );
-      }
-    }
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final secondaryText =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+
     return Scaffold(
-      backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        title: const Text('Speaking Materials'),
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => const MaterialUploadScreen()));
-          if (result == true) _load();
+      body: Consumer<LearningMaterialProvider>(
+        builder: (context, provider, child) {
+          return RefreshIndicator(
+            onRefresh: provider.refresh,
+            child: CustomScrollView(
+              slivers: [
+                _buildHeader(provider),
+                SliverToBoxAdapter(child: _buildSearchBar(provider)),
+                SliverToBoxAdapter(child: _buildCategoryChips(provider)),
+                _buildBody(provider, secondaryText),
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              ],
+            ),
+          );
         },
-        backgroundColor: AppTheme.secondary,
-        icon: const Icon(Icons.upload, color: Colors.white),
-        label: const Text('Upload', style: TextStyle(color: Colors.white)),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _ErrorWidget(message: _error!, onRetry: _load)
-              : _materials.isEmpty
-                  ? const _EmptyWidget()
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                        itemCount: _materials.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: 12),
-                        itemBuilder: (_, i) => _MaterialCard(
-                          material: _materials[i],
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => MaterialDetailScreen(
-                                  material: _materials[i]),
-                            ),
-                          ),
-                          onDelete: () => _delete(_materials[i]),
-                        ),
+    );
+  }
+
+  Widget _buildHeader(LearningMaterialProvider provider) {
+    return SliverAppBar(
+      expandedHeight: 150,
+      pinned: true,
+      backgroundColor: AppColors.primaryPurple,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: -30,
+                right: -20,
+                child: _circle(140, 0.08),
+              ),
+              Positioned(
+                bottom: -40,
+                left: -30,
+                child: _circle(150, 0.06),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Materi Belajar',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${provider.materials.length} materi tersedia untukmu',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
-}
 
-class _MaterialCard extends StatelessWidget {
-  final SpeakingMaterialModel material;
-  final VoidCallback onTap;
-  final VoidCallback onDelete;
+  Widget _circle(double size, double opacity) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withOpacity(opacity),
+        ),
+      );
 
-  const _MaterialCard({
-    required this.material,
-    required this.onTap,
-    required this.onDelete,
-  });
+  Widget _buildSearchBar(LearningMaterialProvider provider) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: TextField(
+        controller: _searchController,
+        onChanged: provider.searchMaterials,
+        decoration: InputDecoration(
+          hintText: 'Cari materi...',
+          prefixIcon: const Icon(Icons.search_rounded),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear_rounded),
+                  onPressed: () {
+                    _searchController.clear();
+                    provider.searchMaterials('');
+                    setState(() {});
+                  },
+                )
+              : null,
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surface,
+          contentPadding: const EdgeInsets.symmetric(vertical: 4),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: Theme.of(context).dividerColor.withOpacity(0.3),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildCategoryChips(LearningMaterialProvider provider) {
+    if (provider.categories.length <= 1) return const SizedBox(height: 4);
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        itemCount: provider.categories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final category = provider.categories[index];
+          final isSelected = provider.selectedCategory == category;
+          return GestureDetector(
+            onTap: () => provider.loadMaterialsByCategory(category),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: isSelected ? AppColors.primaryGradient : null,
+                color: isSelected
+                    ? null
+                    : Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(
+                  color: isSelected
+                      ? Colors.transparent
+                      : Theme.of(context).dividerColor.withOpacity(0.3),
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                category,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBody(LearningMaterialProvider provider, Color secondaryText) {
+    if (provider.isLoading && provider.materials.isEmpty) {
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.only(top: 80),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    if (provider.error.isNotEmpty && provider.materials.isEmpty) {
+      return SliverToBoxAdapter(
+        child: _message(
+          Icons.cloud_off_rounded,
+          'Gagal memuat materi',
+          'Tarik untuk menyegarkan',
+          secondaryText,
+        ),
+      );
+    }
+
+    if (provider.filteredMaterials.isEmpty) {
+      return SliverToBoxAdapter(
+        child: _message(
+          Icons.video_library_outlined,
+          'Tidak ada materi',
+          'Materi akan muncul di sini',
+          secondaryText,
+        ),
+      );
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.all(16),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildMaterialCard(
+                provider.filteredMaterials[index],
+                index,
+                secondaryText,
+              ),
+            );
+          },
+          childCount: provider.filteredMaterials.length,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMaterialCard(
+    LearningMaterial material,
+    int index,
+    Color secondaryText,
+  ) {
+    final gradient = _gradients[index % _gradients.length];
+
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => MaterialDetailScreen(materialId: material.id),
+          ),
+        );
+      },
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.border),
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: gradient.first.withOpacity(0.18),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Thumbnail
+            // Thumbnail dengan gradient + play
             Container(
-              height: 140,
+              height: 120,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF10B981), Color(0xFF059669)],
+                gradient: LinearGradient(
+                  colors: gradient,
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: Stack(
                 children: [
-                  const Center(
-                    child: Icon(Icons.play_circle_fill,
-                        size: 56, color: Colors.white70),
-                  ),
                   Positioned(
-                    top: 12,
-                    right: 12,
-                    child: Row(
-                      children: [
-                        _Badge(
-                            icon: Icons.videocam,
-                            label: 'Video',
-                            color: Colors.white),
-                        if (material.pdf != null) ...[
-                          const SizedBox(width: 6),
-                          _Badge(
-                              icon: Icons.picture_as_pdf,
-                              label: 'PDF',
-                              color: Colors.white),
-                        ],
-                      ],
+                    top: -20,
+                    right: -20,
+                    child: _circle(90, 0.12),
+                  ),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.22),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.play_arrow_rounded,
+                        color: Colors.white,
+                        size: 36,
+                      ),
                     ),
                   ),
+                  if (material.pdf != null)
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.picture_as_pdf_rounded,
+                                size: 12, color: Colors.white),
+                            SizedBox(width: 4),
+                            Text('PDF',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
-            // Info
+            // Konten
             Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(material.title,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                                color: AppTheme.textPrimary)),
-                        if (material.description != null &&
-                            material.description!.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(material.description!,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                    color: AppTheme.textSecondary,
-                                    fontSize: 12)),
-                          ),
-                      ],
+                  Text(
+                    material.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline,
-                        color: AppTheme.danger),
-                    onPressed: onDelete,
+                  if (material.description != null &&
+                      material.description!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      material.description!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 13, height: 1.4, color: secondaryText),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: gradient.first.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          material.kategori,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: gradient.first,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      Icon(Icons.arrow_forward_rounded,
+                          size: 18, color: secondaryText),
+                    ],
                   ),
                 ],
               ),
@@ -237,92 +418,33 @@ class _MaterialCard extends StatelessWidget {
       ),
     );
   }
-}
 
-class _Badge extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _Badge(
-      {required this.icon, required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.black26,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(label,
-              style: TextStyle(
-                  color: color,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorWidget extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _ErrorWidget({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 56, color: AppTheme.danger),
-            const SizedBox(height: 16),
-            Text(message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppTheme.textSecondary)),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Coba Lagi'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyWidget extends StatelessWidget {
-  const _EmptyWidget();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
+  Widget _message(
+    IconData icon,
+    String title,
+    String subtitle,
+    Color secondaryText,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 24),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.video_library_outlined, size: 72, color: AppTheme.border),
+          Icon(icon, size: 72, color: AppColors.primaryBlue.withOpacity(0.4)),
           const SizedBox(height: 16),
-          const Text('Belum ada materi',
-              style: TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          const Text('Tap tombol Upload untuk menambahkan materi',
-              style: TextStyle(
-                  color: AppTheme.textSecondary, fontSize: 13)),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: secondaryText),
+          ),
         ],
       ),
     );

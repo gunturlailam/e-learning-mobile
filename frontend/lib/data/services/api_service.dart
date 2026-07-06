@@ -4,13 +4,28 @@ import '../models/user_model.dart';
 import '../models/topic_model.dart';
 import '../models/speaking_material_model.dart';
 import '../../core/constants/api_constants.dart';
+import 'auth_service.dart';
 
 class ApiService {
   final String _base = ApiConstants.baseUrl;
+  final AuthService _auth = AuthService();
+
+  Future<Map<String, String>> _headers({String? contentType}) async {
+    final h = <String, String>{'Accept': 'application/json'};
+    if (contentType != null) h['Content-Type'] = contentType;
+    final token = await _auth.getToken();
+    if (token != null && token.isNotEmpty) {
+      h['Authorization'] = 'Bearer $token';
+    }
+    return h;
+  }
 
   // ─── USERS ───────────────────────────────────────────────
   Future<List<UserModel>> getUsers() async {
-    final res = await http.get(Uri.parse('$_base/users'));
+    final res = await http.get(
+      Uri.parse('$_base/users'),
+      headers: await _headers(),
+    );
     _checkStatus(res);
     final body = jsonDecode(res.body);
     final List data = body['data'];
@@ -18,7 +33,10 @@ class ApiService {
   }
 
   Future<UserModel> getUserById(int id) async {
-    final res = await http.get(Uri.parse('$_base/users/$id'));
+    final res = await http.get(
+      Uri.parse('$_base/users/$id'),
+      headers: await _headers(),
+    );
     _checkStatus(res);
     return UserModel.fromJson(jsonDecode(res.body)['data']);
   }
@@ -27,7 +45,7 @@ class ApiService {
       String name, String email, String password) async {
     final res = await http.post(
       Uri.parse('$_base/users'),
-      headers: {'Content-Type': 'application/json'},
+      headers: await _headers(contentType: 'application/json'),
       body: jsonEncode({'name': name, 'email': email, 'password': password}),
     );
     _checkStatus(res);
@@ -43,7 +61,7 @@ class ApiService {
 
     final res = await http.put(
       Uri.parse('$_base/users/$id'),
-      headers: {'Content-Type': 'application/json'},
+      headers: await _headers(contentType: 'application/json'),
       body: jsonEncode(body),
     );
     _checkStatus(res);
@@ -51,13 +69,19 @@ class ApiService {
   }
 
   Future<void> deleteUser(int id) async {
-    final res = await http.delete(Uri.parse('$_base/users/$id'));
+    final res = await http.delete(
+      Uri.parse('$_base/users/$id'),
+      headers: await _headers(),
+    );
     _checkStatus(res);
   }
 
   // ─── TOPICS ──────────────────────────────────────────────
   Future<List<TopicModel>> getTopics() async {
-    final res = await http.get(Uri.parse('$_base/topics'));
+    final res = await http.get(
+      Uri.parse('$_base/topics'),
+      headers: await _headers(),
+    );
     _checkStatus(res);
     final body = jsonDecode(res.body);
     final List data = body['data'];
@@ -65,7 +89,10 @@ class ApiService {
   }
 
   Future<TopicModel> getTopicById(int id) async {
-    final res = await http.get(Uri.parse('$_base/topics/$id'));
+    final res = await http.get(
+      Uri.parse('$_base/topics/$id'),
+      headers: await _headers(),
+    );
     _checkStatus(res);
     return TopicModel.fromJson(jsonDecode(res.body)['data']);
   }
@@ -77,7 +104,7 @@ class ApiService {
       bool isFree = false}) async {
     final res = await http.post(
       Uri.parse('$_base/topics'),
-      headers: {'Content-Type': 'application/json'},
+      headers: await _headers(contentType: 'application/json'),
       body: jsonEncode({
         'title': title,
         'description': description,
@@ -90,25 +117,44 @@ class ApiService {
   }
 
   Future<void> deleteTopic(int id) async {
-    final res = await http.delete(Uri.parse('$_base/topics/$id'));
+    final res = await http.delete(
+      Uri.parse('$_base/topics/$id'),
+      headers: await _headers(),
+    );
     _checkStatus(res);
   }
 
   // ─── SPEAKING MATERIALS ──────────────────────────────────
   Future<List<SpeakingMaterialModel>> getMaterials() async {
-    final res =
-        await http.get(Uri.parse('$_base/speaking-materials'));
+    final res = await http.get(
+      Uri.parse('$_base/speaking-materials'),
+      headers: await _headers(),
+    );
     _checkStatus(res);
-    final List data = jsonDecode(res.body);
-    return data.map((e) => SpeakingMaterialModel.fromJson(e)).toList();
+    final list = _decodeJsonList(res.body);
+    return list
+        .map((e) => SpeakingMaterialModel.fromJson(
+            Map<String, dynamic>.from(e as Map)))
+        .toList();
   }
 
   Future<SpeakingMaterialModel> getMaterialById(int id) async {
-    final res =
-        await http.get(Uri.parse('$_base/speaking-materials/$id'));
+    final res = await http.get(
+      Uri.parse('$_base/speaking-materials/$id'),
+      headers: await _headers(),
+    );
     _checkStatus(res);
-    return SpeakingMaterialModel.fromJson(
-        jsonDecode(res.body)['data']);
+    final decoded = jsonDecode(res.body);
+    if (decoded is Map<String, dynamic>) {
+      if (decoded['data'] is Map) {
+        return SpeakingMaterialModel.fromJson(
+            Map<String, dynamic>.from(decoded['data'] as Map));
+      }
+      if (decoded['id'] != null) {
+        return SpeakingMaterialModel.fromJson(decoded);
+      }
+    }
+    throw const FormatException('Format respons detail materi tidak valid');
   }
 
   Future<SpeakingMaterialModel> createMaterial({
@@ -119,6 +165,7 @@ class ApiService {
   }) async {
     final req = http.MultipartRequest(
         'POST', Uri.parse('$_base/speaking-materials'));
+    req.headers.addAll(await _headers());
     req.fields['title'] = title;
     if (description != null) req.fields['description'] = description;
     req.files.add(await http.MultipartFile.fromPath('video', videoPath));
@@ -133,8 +180,10 @@ class ApiService {
   }
 
   Future<void> deleteMaterial(int id) async {
-    final res =
-        await http.delete(Uri.parse('$_base/speaking-materials/$id'));
+    final res = await http.delete(
+      Uri.parse('$_base/speaking-materials/$id'),
+      headers: await _headers(),
+    );
     _checkStatus(res);
   }
 
@@ -144,7 +193,7 @@ class ApiService {
       required double progress}) async {
     final res = await http.post(
       Uri.parse('$_base/speaking-materials/progress'),
-      headers: {'Content-Type': 'application/json'},
+      headers: await _headers(contentType: 'application/json'),
       body: jsonEncode({
         'material_id': materialId,
         'user_id': userId,
@@ -152,6 +201,17 @@ class ApiService {
       }),
     );
     _checkStatus(res);
+  }
+
+  /// Accepts `[...]` or `{"data":[...]}` from Laravel.
+  List<dynamic> _decodeJsonList(String body) {
+    final decoded = jsonDecode(body);
+    if (decoded is List<dynamic>) return decoded;
+    if (decoded is Map<String, dynamic>) {
+      final data = decoded['data'];
+      if (data is List<dynamic>) return data;
+    }
+    throw const FormatException('Expected JSON array or object with "data" array');
   }
 
   // ─── HELPER ──────────────────────────────────────────────
