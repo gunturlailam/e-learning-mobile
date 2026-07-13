@@ -7,4 +7,7 @@ class AppRoutes {
   static const String splash = '/';
   static const String packageDetail = '/package-detail';
   static const String paymentMethod = '/payment-method';
+  static const String quiz = '/quiz';
+  static const String certificates = '/certificates';
+  static const String certificateDetail = '/certificate-detail';
 }

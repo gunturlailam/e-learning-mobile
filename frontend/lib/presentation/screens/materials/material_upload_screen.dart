@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../data/services/api_service.dart';
 
 class MaterialUploadScreen extends StatefulWidget {
@@ -20,6 +20,12 @@ class _MaterialUploadScreenState extends State<MaterialUploadScreen> {
   String? _pdfPath;
   String? _pdfName;
   bool _loading = false;
+
+  static const _primary = Color(0xFF4F46E5);
+  static const _success = Color(0xFF10B981);
+  static const _pdfColor = Color(0xFFEF4444);
+  static const _textPrimary = AppColors.lightTextPrimary;
+  static const _textSecondary = AppColors.lightTextSecondary;
 
   @override
   void dispose() {
@@ -61,7 +67,7 @@ class _MaterialUploadScreenState extends State<MaterialUploadScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Pilih file video terlebih dahulu'),
-            backgroundColor: AppTheme.danger),
+            backgroundColor: AppColors.error),
       );
       return;
     }
@@ -79,7 +85,7 @@ class _MaterialUploadScreenState extends State<MaterialUploadScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
               content: Text('Materi berhasil diupload!'),
-              backgroundColor: AppTheme.secondary),
+              backgroundColor: AppColors.primaryBlue),
         );
         Navigator.pop(context, true);
       }
@@ -88,7 +94,7 @@ class _MaterialUploadScreenState extends State<MaterialUploadScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(e.toString()),
-              backgroundColor: AppTheme.danger),
+              backgroundColor: AppColors.error),
         );
       }
     } finally {
@@ -99,7 +105,7 @@ class _MaterialUploadScreenState extends State<MaterialUploadScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppColors.lightBackground,
       appBar: AppBar(title: const Text('Upload Materi')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -112,21 +118,19 @@ class _MaterialUploadScreenState extends State<MaterialUploadScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.06),
+                  color: _primary.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: AppTheme.primary.withOpacity(0.2)),
+                  border: Border.all(color: _primary.withValues(alpha: 0.2)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.info_outline,
-                        color: AppTheme.primary, size: 20),
-                    SizedBox(width: 10),
-                    Expanded(
+                    Icon(Icons.info_outline, color: _primary, size: 20),
+                    const SizedBox(width: 10),
+                    const Expanded(
                       child: Text(
                         'Format video: MP4, MOV, AVI (max 100MB)\nFormat PDF: PDF (max 10MB)',
                         style: TextStyle(
-                            color: AppTheme.primary,
+                            color: _primary,
                             fontSize: 12,
                             height: 1.5),
                       ),
@@ -172,7 +176,7 @@ class _MaterialUploadScreenState extends State<MaterialUploadScreen> {
                     const Text('File Video *',
                         style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.textPrimary)),
+                            color: _textPrimary)),
                     const SizedBox(height: 12),
                     GestureDetector(
                       onTap: _pickVideo,
@@ -181,13 +185,13 @@ class _MaterialUploadScreenState extends State<MaterialUploadScreen> {
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: _videoPath != null
-                              ? AppTheme.secondary.withOpacity(0.06)
-                              : AppTheme.background,
+                              ? _success.withValues(alpha: 0.06)
+                              : AppColors.lightBackground,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: _videoPath != null
-                                ? AppTheme.secondary
-                                : AppTheme.border,
+                                ? _success
+                                : AppColors.lightBorder,
                             style: BorderStyle.solid,
                           ),
                         ),
@@ -199,8 +203,8 @@ class _MaterialUploadScreenState extends State<MaterialUploadScreen> {
                                   : Icons.videocam_outlined,
                               size: 36,
                               color: _videoPath != null
-                                  ? AppTheme.secondary
-                                  : AppTheme.textSecondary,
+                                  ? _success
+                                  : _textSecondary,
                             ),
                             const SizedBox(height: 8),
                             Text(
@@ -208,8 +212,8 @@ class _MaterialUploadScreenState extends State<MaterialUploadScreen> {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: _videoPath != null
-                                    ? AppTheme.secondary
-                                    : AppTheme.textSecondary,
+                                    ? _success
+                                    : _textSecondary,
                                 fontWeight: _videoPath != null
                                     ? FontWeight.w600
                                     : FontWeight.normal,
@@ -230,16 +234,16 @@ class _MaterialUploadScreenState extends State<MaterialUploadScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Text('File PDF',
+                        const Text('File PDF',
                             style: TextStyle(
                                 fontWeight: FontWeight.w600,
-                                color: AppTheme.textPrimary)),
-                        SizedBox(width: 8),
+                                color: _textPrimary)),
+                        const SizedBox(width: 8),
                         Text('(Opsional)',
                             style: TextStyle(
-                                color: AppTheme.textSecondary,
+                                color: _textSecondary,
                                 fontSize: 12)),
                       ],
                     ),
@@ -251,13 +255,13 @@ class _MaterialUploadScreenState extends State<MaterialUploadScreen> {
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: _pdfPath != null
-                              ? AppTheme.danger.withOpacity(0.06)
-                              : AppTheme.background,
+                              ? _pdfColor.withValues(alpha: 0.06)
+                              : AppColors.lightBackground,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: _pdfPath != null
-                                ? AppTheme.danger
-                                : AppTheme.border,
+                                ? _pdfColor
+                                : AppColors.lightBorder,
                           ),
                         ),
                         child: Column(
@@ -268,8 +272,8 @@ class _MaterialUploadScreenState extends State<MaterialUploadScreen> {
                                   : Icons.picture_as_pdf_outlined,
                               size: 36,
                               color: _pdfPath != null
-                                  ? AppTheme.danger
-                                  : AppTheme.textSecondary,
+                                  ? _pdfColor
+                                  : _textSecondary,
                             ),
                             const SizedBox(height: 8),
                             Text(
@@ -277,8 +281,8 @@ class _MaterialUploadScreenState extends State<MaterialUploadScreen> {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: _pdfPath != null
-                                    ? AppTheme.danger
-                                    : AppTheme.textSecondary,
+                                    ? _pdfColor
+                                    : _textSecondary,
                                 fontWeight: _pdfPath != null
                                     ? FontWeight.w600
                                     : FontWeight.normal,
@@ -307,7 +311,12 @@ class _MaterialUploadScreenState extends State<MaterialUploadScreen> {
                       : const Icon(Icons.upload),
                   label: Text(_loading ? 'Mengupload...' : 'Upload Materi'),
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.secondary),
+                    backgroundColor: AppColors.primaryBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
                 ),
               ),
             ],
@@ -322,9 +331,9 @@ class _MaterialUploadScreenState extends State<MaterialUploadScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppColors.lightSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: AppColors.lightBorder),
       ),
       child: child,
     );

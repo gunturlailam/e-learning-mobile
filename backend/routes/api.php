@@ -32,6 +32,7 @@ Route::delete('/topics/{id}', [TopicController::class, 'destroy']);
 // ===== LEARNING MATERIAL ROUTES =====
 Route::get('/learning-materials', [LearningMaterialController::class, 'index']);
 Route::get('/learning-materials/category/{kategori}', [LearningMaterialController::class, 'byCategory']);
+Route::get('/learning-materials/{id}', [LearningMaterialController::class, 'show']);
 Route::post('/learning-materials', [LearningMaterialController::class, 'store']);
 Route::post('/learning-materials/progress', [LearningMaterialController::class, 'saveProgress']);
 Route::get('/learning-materials/web/list', [LearningMaterialController::class, 'materials']);
@@ -41,3 +42,19 @@ Route::post('/learning-materials/web/store', [LearningMaterialController::class,
 // ===== PACKAGE ROUTES =====
 Route::get('/packages', [PackageController::class, 'index']);
 Route::get('/packages/{id}', [PackageController::class, 'show']);
+
+// ===== PAYMENT ROUTES =====
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/payments', [\App\Http\Controllers\PaymentController::class, 'createPayment']);
+    Route::get('/my-payments', [\App\Http\Controllers\PaymentController::class, 'getMyPayments']);
+    Route::get('/payments/{id}/status', [\App\Http\Controllers\PaymentController::class, 'getPaymentStatus']);
+    Route::post('/payments/{id}/upload-proof', [\App\Http\Controllers\PaymentController::class, 'uploadProof']);
+
+    // ===== QUIZ ROUTES =====
+    Route::get('/packages/{packageId}/quiz', [\App\Http\Controllers\QuizController::class, 'show']);
+    Route::post('/packages/{packageId}/quiz/submit', [\App\Http\Controllers\QuizController::class, 'submit']);
+    Route::get('/quiz/attempts', [\App\Http\Controllers\QuizController::class, 'myAttempts']);
+
+    // ===== CERTIFICATE ROUTES =====
+    Route::get('/my-certificates', [\App\Http\Controllers\CertificateController::class, 'myCertificates']);
+});

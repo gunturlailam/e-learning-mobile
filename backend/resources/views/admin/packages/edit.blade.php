@@ -92,7 +92,7 @@
             </label>
             @if($package->thumbnail)
                 <div class="mb-2">
-                    <img src="{{ Storage::url($package->thumbnail) }}" alt="Thumbnail saat ini"
+                    <img src="{{ filter_var($package->thumbnail, FILTER_VALIDATE_URL) ? $package->thumbnail : Storage::url($package->thumbnail) }}" alt="Thumbnail saat ini"
                         class="w-24 h-24 rounded-lg object-cover border border-gray-200">
                     <p class="text-xs text-gray-500 mt-1">Thumbnail saat ini. Upload baru untuk mengganti.</p>
                 </div>

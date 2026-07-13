@@ -4,6 +4,7 @@ import '../../../data/services/auth_service.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/models/auth_model.dart';
 import '../auth/login_screen.dart';
+import 'certificate_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -236,6 +237,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 10),
 
+                      // ── Sertifikat ────────────────────
+                      _ActionButton(
+                        icon: Icons.workspace_premium_rounded,
+                        label: 'Sertifikat Saya',
+                        subtitle: 'Lihat semua sertifikat kelulusan',
+                        color: const Color(0xFFF59E0B),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CertificateScreen(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       // ── App Info ──────────────────────
                       _SectionCard(
                         title: 'Tentang Aplikasi',

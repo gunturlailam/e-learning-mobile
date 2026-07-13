@@ -21,6 +21,17 @@ class LearningMaterialController extends Controller
     }
 
     // =================================
+    // API GET SINGLE MATERI BY ID
+    // =================================
+    public function show($id)
+    {
+        $material = LearningMaterial::findOrFail($id);
+        $material->video_url = asset('storage/' . $material->video);
+        $material->pdf_url = $material->pdf ? asset('storage/' . $material->pdf) : null;
+        return response()->json($material);
+    }
+
+    // =================================
     // API FILTER BERDASARKAN KATEGORI
     // =================================
     public function byCategory($kategori)

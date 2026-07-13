@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Admin\AdminWebPackageController;
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\AdminWebQuizController;
 
 Route::get('/', function () {
     return redirect()->route('admin.login');
@@ -52,4 +53,17 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::get('/packages/{id}/edit', [AdminWebPackageController::class, 'edit'])->name('packages.edit');
     Route::put('/packages/{id}', [AdminWebPackageController::class, 'update'])->name('packages.update');
     Route::delete('/packages/{id}', [AdminWebPackageController::class, 'destroy'])->name('packages.destroy');
+
+    // Quiz Management
+    Route::get('/packages/{packageId}/quiz', [AdminWebQuizController::class, 'show'])->name('packages.quiz');
+    Route::post('/packages/{packageId}/quiz', [AdminWebQuizController::class, 'storeQuiz'])->name('packages.quiz.store');
+    Route::delete('/packages/{packageId}/quiz', [AdminWebQuizController::class, 'destroyQuiz'])->name('packages.quiz.destroy');
+    Route::post('/quiz/{quizId}/questions', [AdminWebQuizController::class, 'addQuestion'])->name('quiz.questions.store');
+    Route::delete('/quiz/questions/{id}', [AdminWebQuizController::class, 'deleteQuestion'])->name('quiz.questions.destroy');
+
+    // Payments Management
+    Route::get('/payments', [\App\Http\Controllers\Admin\AdminPaymentController::class, 'index'])->name('payments.index');
+    Route::get('/payments/{id}', [\App\Http\Controllers\Admin\AdminPaymentController::class, 'show'])->name('payments.show');
+    Route::post('/payments/{id}/approve', [\App\Http\Controllers\Admin\AdminPaymentController::class, 'approve'])->name('payments.approve');
+    Route::post('/payments/{id}/reject', [\App\Http\Controllers\Admin\AdminPaymentController::class, 'reject'])->name('payments.reject');
 });

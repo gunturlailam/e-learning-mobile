@@ -16,7 +16,7 @@ class PackageController extends Controller
             ->get()
             ->map(function ($package) {
                 $package->thumbnail_url = $package->thumbnail
-                    ? asset('storage/' . $package->thumbnail)
+                    ? (filter_var($package->thumbnail, FILTER_VALIDATE_URL) ? $package->thumbnail : asset('storage/' . $package->thumbnail))
                     : null;
                 return $package;
             });
@@ -35,18 +35,30 @@ class PackageController extends Controller
         $package = Package::with('materials')->withCount('materials')->findOrFail($id);
 
         $package->thumbnail_url = $package->thumbnail
-            ? asset('storage/' . $package->thumbnail)
+            ? (filter_var($package->thumbnail, FILTER_VALIDATE_URL) ? $package->thumbnail : asset('storage/' . $package->thumbnail))
             : null;
 
-        $package->materials->transform(function ($item) {
-            $item->video_url = $item->video ? asset('storage/' . $item->video) : null;
-            $item->pdf_url   = $item->pdf   ? asset('storage/' . $item->pdf)   : null;
-            return $item;
-        });
+        $quiz = \App\Models\Quiz::where('package_id', $id)->first();
+
+        $packageArray = $package->toArray();
+        $packageArray['thumbnail_url'] = $package->thumbnail_url;
+        $packageArray['has_quiz'] = !is_null($quiz);
+        $packageArray['quiz_title'] = $quiz ? $quiz->title : null;
+
+        $packageArray['materials'] = $package->materials->map(function ($item) {
+            $itemArray = $item->toArray();
+            $itemArray['video_url'] = $item->video
+                ? (filter_var($item->video, FILTER_VALIDATE_URL) ? $item->video : asset('storage/' . $item->video))
+                : null;
+            $itemArray['pdf_url'] = $item->pdf
+                ? (filter_var($item->pdf, FILTER_VALIDATE_URL) ? $item->pdf : asset('storage/' . $item->pdf))
+                : null;
+            return $itemArray;
+        })->toArray();
 
         return response()->json([
             'success' => true,
-            'data'    => $package,
+            'data'    => $packageArray,
         ]);
     }
 }

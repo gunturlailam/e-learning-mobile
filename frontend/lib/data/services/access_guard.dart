@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'payment_service.dart';
 
 /// AccessGuard - Cek akses user sebelum masuk ke paket
 /// Sesuai modul Pertemuan 15
@@ -13,10 +14,25 @@ class AccessGuard {
       return 'login_required';
     }
 
-    // Cek apakah paket sudah dibayar (simpan di local storage)
-    final purchasedPackages = prefs.getStringList('purchased_packages') ?? [];
-    if (purchasedPackages.contains(packageName)) {
-      return 'granted';
+    try {
+      // Cek apakah paket sudah dibayar via API
+      final payments = await PaymentService.getMyPayments();
+      final hasAccess = payments.any((p) => 
+        (p.menuName.toLowerCase() == packageName.toLowerCase()) && 
+        p.status == 'approved'
+      );
+      
+      if (hasAccess) {
+        // Simpan ke local cache agar sinkron
+        await grantAccess(packageName);
+        return 'granted';
+      }
+    } catch (e) {
+      // Jika offline/error, fallback ke local storage
+      final purchasedPackages = prefs.getStringList('purchased_packages') ?? [];
+      if (purchasedPackages.contains(packageName)) {
+        return 'granted';
+      }
     }
 
     // Belum bayar → perlu pembayaran

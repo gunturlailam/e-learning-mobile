@@ -35,7 +35,7 @@
                     <td class="px-6 py-4 text-sm text-gray-800 font-medium">
                         <div class="flex items-center gap-3">
                             @if($package->thumbnail)
-                                <img src="{{ Storage::url($package->thumbnail) }}" alt=""
+                                <img src="{{ filter_var($package->thumbnail, FILTER_VALIDATE_URL) ? $package->thumbnail : Storage::url($package->thumbnail) }}" alt=""
                                     class="w-10 h-10 rounded-lg object-cover">
                             @else
                                 <div class="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">
@@ -74,6 +74,8 @@
                     <td class="px-6 py-4 text-sm space-x-2">
                         <a href="{{ route('admin.packages.edit', $package->id) }}"
                             class="text-blue-600 hover:text-blue-800 font-medium">Edit</a>
+                        <a href="{{ route('admin.packages.quiz', $package->id) }}"
+                            class="text-purple-600 hover:text-purple-800 font-medium">Quiz</a>
                         <form method="POST" action="{{ route('admin.packages.destroy', $package->id) }}" class="inline">
                             @csrf
                             @method('DELETE')

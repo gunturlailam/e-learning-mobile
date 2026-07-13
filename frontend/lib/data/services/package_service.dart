@@ -58,6 +58,22 @@ class PackageService {
     }
   }
 
+  static Future<Map<String, dynamic>?> getQuiz(int packageId) async {
+    try {
+      final response = await ApiClient.get('/packages/$packageId/quiz');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is Map && data['success'] == true) {
+          return Map<String, dynamic>.from(data['data']);
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching quiz: $e');
+      return null;
+    }
+  }
+
   static Future<Map<String, dynamic>> submitQuiz(
       int packageId, Map<String, String> answers) async {
     try {

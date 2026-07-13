@@ -59,6 +59,11 @@
                     <i class="fas fa-box-open w-6"></i>
                     <span class="ml-3">Paket Kursus</span>
                 </a>
+
+                <a href="{{ route('admin.payments.index') }}" class="sidebar-link {{ request()->routeIs('admin.payments*') ? 'active' : '' }} flex items-center px-6 py-3 text-gray-300 hover:text-white transition-all duration-200">
+                    <i class="fas fa-credit-card w-6"></i>
+                    <span class="ml-3">Pembayaran</span>
+                </a>
             </nav>
         </aside>
 

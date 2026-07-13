@@ -10,6 +10,8 @@ import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/providers/learning_material_provider.dart';
 import 'presentation/providers/package_provider.dart';
+import 'presentation/providers/quiz_provider.dart';
+import 'presentation/providers/certificate_provider.dart';
 import 'routes/app_routes.dart';
 
 void main() {
@@ -39,6 +41,8 @@ class ELearningApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LearningMaterialProvider(dio)),
         ChangeNotifierProvider(create: (_) => PackageProvider()),
+        ChangeNotifierProvider(create: (_) => QuizProvider()),
+        ChangeNotifierProvider(create: (_) => CertificateProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

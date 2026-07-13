@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../data/models/package_model.dart';
 import '../../data/services/access_guard.dart';
 import '../../routes/app_routes.dart';
 import '../../presentation/providers/package_provider.dart';
@@ -242,29 +241,31 @@ class _PackageTileState extends State<_PackageTile> {
             ? Colors.black87
             : Colors.white;
 
+    final Color startColor = widget.color;
+    final Color endColor = HSLColor.fromColor(widget.color)
+        .withLightness(
+          (HSLColor.fromColor(widget.color).lightness - 0.15).clamp(0.0, 1.0),
+        )
+        .toColor();
+    final cardGradient = LinearGradient(
+      colors: [startColor, endColor],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
     return GestureDetector(
       onTap: _isLoading ? null : _handleTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: widget.color,
-          borderRadius: BorderRadius.circular(20),
-          border: Border(
-            bottom: BorderSide(
-              color: HSLColor.fromColor(widget.color)
-                  .withLightness(
-                    (HSLColor.fromColor(widget.color).lightness - 0.15)
-                        .clamp(0.0, 1.0),
-                  )
-                  .toColor(),
-              width: 4,
-            ),
-          ),
+          gradient: cardGradient,
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: widget.color.withOpacity(0.3),
-              blurRadius: 0,
-              offset: const Offset(0, 4),
+              color: widget.color.withOpacity(0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
@@ -272,13 +273,18 @@ class _PackageTileState extends State<_PackageTile> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Stack(
+              clipBehavior: Clip.none,
               children: [
                 Container(
-                  width: 60,
-                  height: 60,
+                  width: 64,
+                  height: 64,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(18),
+                    color: Colors.white.withOpacity(0.22),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.12),
+                      width: 1,
+                    ),
                   ),
                   child: _isLoading
                       ? const Center(
@@ -296,31 +302,40 @@ class _PackageTileState extends State<_PackageTile> {
                 // Lock badge untuk paket berbayar
                 if (!widget.isFree)
                   Positioned(
-                    right: 0,
-                    bottom: 0,
+                    right: -4,
+                    bottom: -4,
                     child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
                         color: Colors.redAccent,
                         shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: const Icon(
                         Icons.lock,
                         color: Colors.white,
-                        size: 14,
+                        size: 12,
                       ),
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Text(
               widget.displayName,
               textAlign: TextAlign.center,
               style: TextStyle(
+                fontFamily: 'Poppins',
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: textColor,
+                letterSpacing: 0.1,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
