@@ -23,4 +23,41 @@ class CertificateController extends Controller
             'data' => $certificates,
         ]);
     }
+
+    /**
+     * Web: Show a certificate earned from a quiz attempt.
+     */
+    public function showWebCertificate($attemptId)
+    {
+        $attempt = \App\Models\QuizAttempt::with(['user', 'quiz.package'])->findOrFail($attemptId);
+
+        if (!$attempt->passed) {
+            abort(403, 'Sertifikat tidak tersedia karena kuis ini belum lulus.');
+        }
+
+        $certificate = Certificate::where('user_id', $attempt->user_id)
+            ->where('package_id', $attempt->quiz->package_id)
+            ->first();
+
+        if (!$certificate) {
+            $certificate = Certificate::firstOrCreate(
+                [
+                    'user_id' => $attempt->user_id,
+                    'package_id' => $attempt->quiz->package_id,
+                ],
+                [
+                    'certificate_code' => 'ZAF-' . str_pad($attempt->id, 6, '0', STR_PAD_LEFT),
+                    'issued_at' => $attempt->created_at ?? now(),
+                ]
+            );
+        }
+
+        return view('certificate', [
+            'attempt' => $attempt,
+            'certificate' => $certificate,
+            'user' => $attempt->user,
+            'package' => $attempt->quiz->package,
+        ]);
+    }
 }
+

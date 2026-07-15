@@ -67,3 +67,5 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::post('/payments/{id}/approve', [\App\Http\Controllers\Admin\AdminPaymentController::class, 'approve'])->name('payments.approve');
     Route::post('/payments/{id}/reject', [\App\Http\Controllers\Admin\AdminPaymentController::class, 'reject'])->name('payments.reject');
 });
+
+Route::get('/certificate/{attemptId}', [\App\Http\Controllers\CertificateController::class, 'showWebCertificate'])->name('certificate.show');

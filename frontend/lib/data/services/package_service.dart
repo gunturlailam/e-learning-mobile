@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../models/package_model.dart';
+import '../models/quiz_model.dart';
 import 'api_client.dart';
 
 /// Service untuk Package API - sesuai modul Pertemuan 15
@@ -58,13 +59,13 @@ class PackageService {
     }
   }
 
-  static Future<Map<String, dynamic>?> getQuiz(int packageId) async {
+  static Future<QuizModel?> getQuiz(int packageId) async {
     try {
       final response = await ApiClient.get('/packages/$packageId/quiz');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data is Map && data['success'] == true) {
-          return Map<String, dynamic>.from(data['data']);
+          return QuizModel.fromJson(Map<String, dynamic>.from(data['data']));
         }
       }
       return null;
