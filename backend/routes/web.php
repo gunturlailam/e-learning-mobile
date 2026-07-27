@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminWebPackageController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\AdminWebQuizController;
@@ -20,7 +21,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 // Admin Routes (protected)
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     // Dashboard
-    Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/print', [AdminDashboardController::class, 'print'])->name('dashboard.print');
 
     // User Management
     Route::get('/users', [AdminController::class, 'users'])->name('users');
